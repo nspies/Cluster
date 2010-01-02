@@ -19,17 +19,8 @@ def launchJob(cmd, scriptOptions, verbose=False, test=False, fast=False):
 
     Returns a job ID if the job was submitted properly """
 
-    pid = os.getpid()
-    outscriptName = "%s.%i"%(scriptOptions.jobname, pid)
-    
-    scriptOptions["outf"] = os.path.abspath(os.path.join(scriptOptions["outdir"], outscriptName+".out"))
     if type(cmd) not in [type(list()), type(tuple())]:
         cmd = [cmd]
-
-    if verbose:
-        print cmd
-        
-    scriptOptions["command"] = " ".join(cmd)
 
     scriptOptions.setdefault("workingdir", os.getcwd())
     scriptOptions.setdefault("nodes", "1")
@@ -37,7 +28,18 @@ def launchJob(cmd, scriptOptions, verbose=False, test=False, fast=False):
     scriptOptions.setdefault("jobname", os.path.basename(sys.argv[0]))
     scriptOptions.setdefault("queue", "short")
     scriptOptions.setdefault("outdir", "")
+
+    scriptOptions["command"] = " ".join(cmd)
+
+    if verbose:
+        print cmd
+        print scriptOptions
+        
+    pid = os.getpid()
+    outscriptName = "%s.%i"%(scriptOptions["jobname"], pid)
     
+    scriptOptions["outf"] = os.path.abspath(os.path.join(scriptOptions["outdir"], outscriptName+".out"))
+
     if fast:
         assert scriptOptions["nodes"] == "1", "Can only choose specific nodes if you're not restricting jobs to the fast nodes."
         scriptOptions["nodes"] = "1:E5450"
@@ -124,6 +126,12 @@ if __name__ == "__main__":
 
     
     scriptOptions = vars(options)
+
+    # delete those options that weren't specified on the command line, as we would like to
+    # define the default values for these options in the actual call to launchJob()
+    for key in scriptOptions.keys():
+        if scriptOptions[key] == None:
+            del scriptOptions[key]
             
     jobID = launchJob(args, scriptOptions, options.verbose, options.test, fast=options.fast)
 
